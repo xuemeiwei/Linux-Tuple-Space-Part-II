@@ -1,0 +1,132 @@
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Set;
+
+public class Utils {
+	public static void updateAllNetsFile(ArrayList<String> hosts, String netsFile) {
+		Client client = new Client();
+		for(String host: hosts) {
+			String[] tmp = host.split(" ");
+			client.add(tmp[1], tmp[2], netsFile);
+		}
+	}
+	public static Set<String> getAllHostInfoIntoSet(String netsPath) throws IOException {
+		Set<String> hosts = new HashSet<>();
+		FileReader fr = new FileReader(netsPath);
+    	BufferedReader br = new BufferedReader(fr);
+    	String tmp = null;
+		while((tmp = br.readLine()) != null) {
+			if(tmp != "\n") {
+				hosts.add(tmp);
+			}
+		}
+		br.close();
+		return hosts;
+	}
+	public static ArrayList<String> getAllHostInfoIntoList(String netsPath) throws IOException {
+		FileReader fr = new FileReader(netsPath);
+    	BufferedReader br = new BufferedReader(fr);
+    	ArrayList<String> hosts = new ArrayList<>();
+    	String tmp = null;
+    	while( (tmp = br.readLine()) != null) {
+    		if(!tmp.equals("\n") && tmp != null) {
+    			hosts.add(tmp);
+    		}
+    	}
+		br.close();
+		return hosts;
+	}
+	public static int getHostNumber(String netsPath) throws IOException {
+		FileReader fr = new FileReader(netsPath);
+		@SuppressWarnings("resource")
+		BufferedReader br = new BufferedReader(fr);
+    	String tmp = null;
+    	int cnt = 0;
+    	while((tmp = br.readLine()) != null) {
+    		if(!tmp.equals("\n")) {
+    			cnt++;
+    		}
+    	}
+    	return cnt;
+	}
+	public static int getBackHostId(int hostId, int hostNumber) {
+		if(hostNumber == 1) {
+			return hostId;
+		}else if(hostNumber == 2) {
+			return 2 - hostId;
+		}else{
+			return (hostId - 2 + hostNumber) % hostNumber;
+		}
+	}
+	public static int getBackupId(int hostId, int hostNumber) {
+		if(hostNumber == 1) {
+			return hostId;
+		}else if(hostNumber == 2){
+			return 1 - hostId;
+		}else{
+			return (hostId + 2) % hostNumber;
+		}
+	}
+	public static void updateTuplesFile(String tuplesPath, String otherHostAddress, String otherHostPort) throws IOException {
+		Client client = new Client();
+		String netsFile = client.getTuplesFile(otherHostAddress, otherHostPort);
+		FileWriter fw = new FileWriter(tuplesPath);
+		BufferedWriter bw = new BufferedWriter(fw);
+		bw.write(netsFile);
+		bw.close();
+	}
+	
+	public static String[] getAddHostsInfo(String command) {
+		String[] tmp = command.split("\\(");
+		String[] newHostsInfo = new String[tmp.length - 1];
+		for(int i = 1; i < tmp.length; ++i) {
+			String eachHost = tmp[i].trim();
+			eachHost = eachHost.substring(0, eachHost.length() - 1);
+			String[] info = eachHost.split(",");
+			newHostsInfo[i - 1] = info[0].trim() + " " + info[1].trim() + " " + info[2].trim();
+		}
+		return newHostsInfo;
+	}
+	
+	public static String[] getDeleteHostsInfo(String command) {
+		int start = command.indexOf('(');
+    	int end = command.indexOf(')');
+    	command = command.substring(start + 1, end).trim();
+		String[] tmp = command.split(",");
+		String[] deleteHostsInfo = new String[tmp.length];
+		for(int i = 0; i < tmp.length; ++i) {
+			deleteHostsInfo[i] = tmp[i].trim();
+		}
+		return deleteHostsInfo;
+	}
+	
+	public static String[] getDataTobeAllocated(Set<String> hosts, ArrayList<String> hostsArray, String netsFile) {
+		Client client = new Client();
+		int hostNumber = hosts.size();
+		System.out.println("hostNumber: " + hostNumber);
+		String[] dataTobeAllocated = new String[hostNumber];
+    	for(int i = 0; i < hostNumber; ++i) {
+    		dataTobeAllocated[i] = "";
+    	}
+		for(String item: hosts) {
+			System.out.println("item: " + item);
+			hostsArray.add(item);
+			netsFile += item + "\n";
+			String[] hostInfo = item.split(" ");
+    		String tuplesOnHost = client.getTuplesFile(hostInfo[1], hostInfo[2]);
+    		String[] tuples = tuplesOnHost.split("\n");
+    		for(String tuple: tuples) {
+    			if(!tuple.equals("\n") && tuples != null) {
+    				int hostId = Hash.md5(tuple, hostNumber);
+    				dataTobeAllocated[hostId] += tuple + "\n";
+    			}
+    		}
+		}
+		return dataTobeAllocated;
+	}
+}

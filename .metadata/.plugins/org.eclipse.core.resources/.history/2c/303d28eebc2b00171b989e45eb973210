@@ -1,0 +1,39 @@
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Set;
+
+public class Utils {
+	public static void updateAllNetsFile(ArrayList<String> hosts, String netsFile) {
+		Client client = new Client();
+		for(String host: hosts) {
+			String[] tmp = host.split(" ");
+			client.add(tmp[1], tmp[2], netsFile);
+		}
+	}
+	public static Set<String> getAllHostInfoIntoSet(String netsPath) throws IOException {
+		Set<String> hosts = new HashSet<>();
+		FileReader fr = new FileReader(netsPath);
+    	BufferedReader br = new BufferedReader(fr);
+    	String tmp = null;
+		while((tmp = br.readLine()) != null) {
+			if(tmp != "\n") {
+				hosts.add(tmp);
+			}
+		}
+		br.close();
+		return hosts;
+	}
+	public static void updateTuplesFile(String tuplesPath, String otherHostAddress, String otherHostPort) throws IOException {
+		Client client = new Client();
+		String netsFile = client.getTuplesFile(otherHostAddress, otherHostPort);
+		FileWriter fw = new FileWriter(tuplesPath);
+		BufferedWriter bw = new BufferedWriter(fw);
+		bw.write(netsFile);
+		bw.close();
+	}
+}

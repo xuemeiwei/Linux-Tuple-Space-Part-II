@@ -1,0 +1,11 @@
+import java.util.ArrayList;
+
+public class utils {
+	public static void updateAllNetsFile(ArrayList<String> hosts, String netsFile) {
+		Client client = new Client();
+		for(String host: hosts) {
+			String[] tmp = host.split(" ");
+			client.add(tmp[1], tmp[2], netsFile);
+		}
+	}
+}
