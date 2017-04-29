@@ -6,12 +6,12 @@
  * Thus only one host can set it at one time.
  */
 public class SharedInfo {
-	boolean flag = false; // mark whether one of the hosts has the tuple;
+	String flag = ""; // mark whether one of the hosts has the tuple;
 	String hostAddress = null;//which host is chosen to remove the tuple;
 	String port = null;//corresponding port;
 	String tuples = "";
-	public synchronized void set(String hostAddress, String port, String tuples) {
-		flag = true;
+	public synchronized void set(String flag, String hostAddress, String port, String tuples) {
+		this.flag = flag;
 		this.hostAddress = hostAddress;
 		this.port = port;
 		this.tuples = tuples;

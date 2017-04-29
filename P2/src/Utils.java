@@ -1,13 +1,16 @@
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.DataOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.net.Socket;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
 
 public class Utils {
+	//Update the netsfile of all hosts
 	public static void updateAllNetsFile(ArrayList<String> hosts, String netsFile) {
 		Client client = new Client();
 		for(String host: hosts) {
@@ -15,6 +18,7 @@ public class Utils {
 			client.add(tmp[1], tmp[2], netsFile);
 		}
 	}
+	//Get all the hosts information into a set
 	public static Set<String> getAllHostInfoIntoSet(String netsPath) throws IOException {
 		Set<String> hosts = new HashSet<>();
 		FileReader fr = new FileReader(netsPath);
@@ -28,6 +32,7 @@ public class Utils {
 		br.close();
 		return hosts;
 	}
+	//Get all the hosts information into a list
 	public static ArrayList<String> getAllHostInfoIntoList(String netsPath) throws IOException {
 		FileReader fr = new FileReader(netsPath);
     	BufferedReader br = new BufferedReader(fr);
@@ -41,6 +46,7 @@ public class Utils {
 		br.close();
 		return hosts;
 	}
+	//Get the number of all hosts from netsfile
 	public static int getHostNumber(String netsPath) throws IOException {
 		FileReader fr = new FileReader(netsPath);
 		BufferedReader br = new BufferedReader(fr);
@@ -54,6 +60,7 @@ public class Utils {
     	br.close();
     	return cnt;
 	}
+	//Get the backup host id from original host id
 	public static int getBackHostId(int hostId, int hostNumber) {
 		if(hostNumber == 1) {
 			return hostId;
@@ -63,6 +70,7 @@ public class Utils {
 			return (hostId - 2 + hostNumber) % hostNumber;
 		}
 	}
+	//Get the original id from backup id
 	public static int getBackupId(int hostId, int hostNumber) {
 		if(hostNumber == 1) {
 			return hostId;
@@ -72,6 +80,8 @@ public class Utils {
 			return (hostId + 2) % hostNumber;
 		}
 	}
+	
+	//Update the original tuples from backup host
 	public static void updateTuplesFile(String tuplesPath, String otherHostAddress, String otherHostPort) throws IOException {
 		Client client = new Client();
 		String netsFile = client.getBackupFile(otherHostAddress, otherHostPort);
@@ -81,6 +91,7 @@ public class Utils {
 		bw.close();
 	}
 	
+	//Update the backup tuples from original host
 	public static void updateBackupFile(String backupPath, String otherHostAddress, String otherHostPort)  throws IOException{
 		Client client = new Client();
 		String netsFile = client.getTuplesFile(otherHostAddress, otherHostPort);
@@ -89,6 +100,8 @@ public class Utils {
 		bw.write(netsFile);
 		bw.close();
 	}
+	
+	//Get the add hosts information from command
 	public static String[] getAddHostsInfo(String command) {
 		String[] tmp = command.split("\\(");
 		String[] newHostsInfo = new String[tmp.length - 1];
@@ -101,6 +114,7 @@ public class Utils {
 		return newHostsInfo;
 	}
 	
+	//Get the delete hosts information from command
 	public static String[] getDeleteHostsInfo(String command) {
 		int start = command.indexOf('(');
     	int end = command.indexOf(')');
@@ -113,6 +127,7 @@ public class Utils {
 		return deleteHostsInfo;
 	}
 	
+	//Get all the data to be allocated from all the hosts
 	public static String[] getDataTobeAllocated(Set<String> hosts, ArrayList<String> hostsArray, int hostNumber) {
 		Client client = new Client();
 		String[] dataTobeAllocated = new String[hostNumber];
@@ -133,6 +148,8 @@ public class Utils {
 		}
 		return dataTobeAllocated;
 	}
+	
+	//Get the netsfile string from the host list
 	public static String getAllNetsFile(ArrayList<String> hostsArray) {
 		String netsFile = "";
 		for(String host: hostsArray) {
@@ -140,9 +157,8 @@ public class Utils {
 		}
 		return netsFile;
 	}
-	/*
-	 *  Preprocess the command line
-	 */
+	
+	// Process the command
 	public static String preprocess(String command){
 		int start = command.indexOf('(');
     	int end = command.indexOf(')');
@@ -155,21 +171,22 @@ public class Utils {
 		return res;
 	}
 	
-	/*
-	 *  Broadcast the tuple to all hosts
-	 */
+	//Broadcast the tuples to all hosts
 	public static void broadCast(String netsPath, int hostNumber, Thread[] broadcastThread, SharedInfo sharedInfo, String strToIn) throws IOException, InterruptedException {
-		FileReader fr = new FileReader(netsPath);
-    	BufferedReader br = new BufferedReader(fr);
-		for(int i = 0; i < hostNumber; ++i) {
-			String tmp = br.readLine();
-			String[] strs = tmp.split(" ");
-			String otheHostname = strs[0];
+		ArrayList<String> allHosts =  getAllHostInfoIntoList(netsPath);
+		for(int i = 0; i < allHosts.size(); ++i) {
+			String[] strs = allHosts.get(i).split(" ");
     		String otherHostIP = strs[1];
     		String otherHostPortNumber = strs[2];
-    		broadcastThread[i] = new BroadcastThread(sharedInfo, otherHostIP, otherHostPortNumber, strToIn, otheHostname);// Create n threads
+    		if(!Utils.checkServerStatus(otherHostIP, otherHostPortNumber)) {
+    			int backupId = getBackupId(i, allHosts.size());
+    			String[] backupInfo = allHosts.get(backupId).split(" ");
+    			broadcastThread[i] = new BroadcastThread(sharedInfo, backupInfo[1], backupInfo[2], strToIn, "backup");
+    		}else{
+    			broadcastThread[i] = new BroadcastThread(sharedInfo, otherHostIP, otherHostPortNumber, strToIn, "original");
+    		}
 		}
-		br.close();
+		
 		// start all the threads
 		for(int i = 0; i < hostNumber; ++i) {
 			broadcastThread[i].start();
@@ -178,5 +195,20 @@ public class Utils {
 		while(sharedInfo.tuples.equals("")) {
 			Thread.sleep(2000);
 		}
+	}
+	
+	//Check whether the server is working or not
+	public static boolean checkServerStatus(String hostAddress, String portNumber) {
+		try {
+			Socket client = new Socket(hostAddress, Integer.valueOf(portNumber));
+			DataOutputStream out = new DataOutputStream(client.getOutputStream());
+			out.writeUTF("check");
+			client.close();
+		} catch (java.net.ConnectException e) {
+			return false;
+		} catch (IOException e) {
+			return false;
+		}
+		return true;
 	}
 }

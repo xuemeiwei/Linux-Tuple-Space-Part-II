@@ -29,9 +29,10 @@ public class Server extends Thread {
             Socket server = serverSocket.accept();
             DataInputStream in = new DataInputStream(server.getInputStream());
             String str = in.readUTF();
-            
             String matched = ""; // store the result match: If "", no match else "match" equals the matched tuple
-            if(str.startsWith("add")) {// The command is "add"
+            
+            // The command is "add host"
+            if(str.startsWith("add")) {
                 FileWriter fw = new FileWriter(netsPath);
         		BufferedWriter bw = new BufferedWriter(fw);
         		bw.write(str.substring(3));
@@ -41,7 +42,7 @@ public class Server extends Thread {
 		    	server.close();
 		    	continue;
             }
-            
+         // The command is "set original tuples"
             if(str.startsWith("setTu")) {
             	FileWriter fw = new FileWriter(tuplesPath);
         		BufferedWriter bw = new BufferedWriter(fw);
@@ -52,7 +53,7 @@ public class Server extends Thread {
 		    	server.close();
 		    	continue;
             }
-            
+         // The command is "set backup tuples"
             if(str.startsWith("setBu")) {
             	FileWriter fw = new FileWriter(backupPath);
         		BufferedWriter bw = new BufferedWriter(fw);
@@ -63,7 +64,7 @@ public class Server extends Thread {
 		    	server.close();
 		    	continue;
             }
-            
+         // The command is "get netsfile"
             if(str.startsWith("nets")) {
             	FileReader fr = new FileReader(netsPath);
 		    	BufferedReader br = new BufferedReader(fr);
@@ -84,6 +85,7 @@ public class Server extends Thread {
 		    	continue;
             }
             
+            // The command is "get tuples"
             if(str.startsWith("tuples")) {
             	FileReader fr = new FileReader(tuplesPath);
 		    	BufferedReader br = new BufferedReader(fr);
@@ -101,6 +103,7 @@ public class Server extends Thread {
 		    	continue;
             }
             
+            // The command is "get backup tuples"
             if(str.startsWith("backup")) {
             	FileReader fr = new FileReader(backupPath);
 		    	BufferedReader br = new BufferedReader(fr);
@@ -118,6 +121,7 @@ public class Server extends Thread {
 		    	continue;
             }
             
+            // The command is "delete hosts"
             if(str.startsWith("delete")) {
             	File dir = new File("/tmp/xwei1/linda/" + hostName);
             	deleteDir(dir);
@@ -127,11 +131,10 @@ public class Server extends Thread {
 		    	continue;
             }
             
+            // The command is "out tuple on original host"
             if(str.startsWith("out")) { //The command is "out"
                 FileWriter fw = new FileWriter(tuplesPath, true);
         		BufferedWriter bw = new BufferedWriter(fw);
-        		System.out.println("The tuple to be stored on this machine is: [" + str.substring(3).trim() + "]");
-        		System.out.print("linda>");
         		bw.write(str.substring(3));
         		bw.write("\n");
         		bw.close();
@@ -142,11 +145,10 @@ public class Server extends Thread {
         		continue;
             }
             
+            // The command is "out tuple on backup host"
             if(str.startsWith("obu")) { //The command is "out"
                 FileWriter fw = new FileWriter(backupPath, true);
         		BufferedWriter bw = new BufferedWriter(fw);
-        		System.out.println("The backup tuple to be stored on this machine is: [" + str.substring(3).trim() + "]");
-        		System.out.print("linda>");
         		bw.write(str.substring(3));
         		bw.write("\n");
         		bw.close();
@@ -157,6 +159,7 @@ public class Server extends Thread {
         		continue;
             }
             
+            // The command is "remove tuple on original host"
             if(str.startsWith("ino")) { //The command is "in exact match"
             	// Read the tuples to see whether there is a match
             	FileReader fr = new FileReader(tuplesPath);
@@ -185,9 +188,8 @@ public class Server extends Thread {
 		    	continue;
             }
             
-            
+            // The command is "remove tuple on backup host"
             if(str.startsWith("inu")) { 
-            	
             	FileReader fr = new FileReader(backupPath);
 		    	BufferedReader br = new BufferedReader(fr);
 		    	String strTowrite = "";
@@ -214,7 +216,7 @@ public class Server extends Thread {
 		    	continue;
             }
             
-            
+            // The command is "read tuple on original host"
             if(str.startsWith("rdo")) { //The command is "read exact match"
             	// Read the tuples to see whether there is a match
             	FileReader fr = new FileReader(tuplesPath);
@@ -235,8 +237,8 @@ public class Server extends Thread {
 		    	continue;
             }
             
-            if(str.startsWith("rdu")) { //The command is "read exact match"
-            	// Read the tuples to see whether there is a match
+            // The command is "read tuple on backup host"
+            if(str.startsWith("rdu")) { 
             	FileReader fr = new FileReader(backupPath);
 		    	BufferedReader br = new BufferedReader(fr);
 		    	String tmp = null;
@@ -255,8 +257,8 @@ public class Server extends Thread {
 		    	continue;
             }
             
-            if(str.startsWith("bro")) { //The command is "broadcast"
-            	// Read the tuples to see whether there is a match
+            // The command is "broadcast tuple on original host"
+            if(str.startsWith("bro")) {
             	FileReader fr = new FileReader(tuplesPath);
 		    	BufferedReader br = new BufferedReader(fr);
 		    	String tmp = null;
@@ -273,16 +275,33 @@ public class Server extends Thread {
 		    	continue;
             }
             
+            // The command is "broadcast tuple on backup host"
+            if(str.startsWith("brb")) { 
+            	FileReader fr = new FileReader(backupPath);
+		    	BufferedReader br = new BufferedReader(fr);
+		    	String tmp = null;
+		    	while((tmp = br.readLine()) != null) {
+		    		if(isMatch(tmp, str.substring(3))) {
+		    			matched = tmp;
+		    			break;
+		    		}
+		    	}
+		    	br.close();
+		    	DataOutputStream out = new DataOutputStream(server.getOutputStream());
+		    	out.writeUTF(matched);
+		    	server.close();
+		    	continue;
+            }
+            
+            // The command is "check status of host"
             if(str.startsWith("check")) {
             	server.close();
             	continue;
             }
-            
          }catch(IOException e){
             e.printStackTrace();
             break;
          }
-         
       }
    }
    public boolean deleteDir(File dir) {

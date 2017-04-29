@@ -6,7 +6,7 @@ import java.io.*;
  */
 public class Client {
 	
-	// Add request
+	// The command is "add host"
 	void add(String hostAddress, String portNumber, String allHostInfo) {
 		try {
 			Socket client = new Socket(hostAddress, Integer.valueOf(portNumber));
@@ -21,7 +21,8 @@ public class Client {
 			e.printStackTrace();
 		}
 	}
-	// Get netsFile
+	
+	// The command is "get netsfile"
 	String getNetsfile(String otherHostAddress, String otherHostPort) {
 		String netsFile = "";
 		try {
@@ -42,7 +43,8 @@ public class Client {
 		}
 		return null;
 	}
-	// 
+	
+	// The command is "get tuples"
 	String getTuplesFile(String otherHostAddress, String otherHostPort) {
 		String netsFile = "";
 		try {
@@ -64,7 +66,8 @@ public class Client {
 		}
 		return null;
 	}
-	//
+	
+	// The command is "get backup tuples"
 	String getBackupFile(String otherHostAddress, String otherHostPort) {
 		String netsFile = "";
 		try {
@@ -76,7 +79,6 @@ public class Client {
 			InputStream inFromServer = client.getInputStream();
 			DataInputStream in = new DataInputStream(inFromServer);
 			netsFile = in.readUTF();
-			//System.out.println("Tuples return from server is: " + netsFile);
 			client.close();
 			return netsFile;
 		} catch (UnknownHostException e) {
@@ -86,7 +88,8 @@ public class Client {
 		}
 		return null;
 	}
-	//
+	
+	// The command is "delete hosts"
 	void deleteFile(String otherHostAddress, String otherHostPort) {
 		try {
 			Socket client = new Socket(otherHostAddress, Integer.valueOf(otherHostPort));
@@ -103,7 +106,7 @@ public class Client {
 			e.printStackTrace();
 		}
 	}
-	//Set tuples
+	// The command is "set original tuples"
 	void setTuples(String hostAddress, String portNumber, String tuples) {
 		try {
 			Socket client = new Socket(hostAddress, Integer.valueOf(portNumber));
@@ -119,7 +122,7 @@ public class Client {
 			e.printStackTrace();
 		}
 	}
-	//Set backup
+	// The command is "set backup tuples"
 	void setBackup(String hostAddress, String portNumber, String tuples) {
 		try {
 			Socket client = new Socket(hostAddress, Integer.valueOf(portNumber));
@@ -136,22 +139,7 @@ public class Client {
 		}
 	}
 	
-	//Check whether the server is working or not
-	boolean checkServerStatus(String hostAddress, String portNumber) {
-		try {
-			Socket client = new Socket(hostAddress, Integer.valueOf(portNumber));
-			DataOutputStream out = new DataOutputStream(client.getOutputStream());
-			out.writeUTF("check");
-			client.close();
-		} catch (java.net.ConnectException e) {
-			return false;
-		} catch (IOException e) {
-			return false;
-		}
-		return true;
-	}
-	
-	// Out request
+	// The command is "put original tuples"
 	void out(String hostAddress, String portNumber, String tuples) {
 		try {
 			Socket client = new Socket(hostAddress, Integer.valueOf(portNumber));
@@ -171,7 +159,7 @@ public class Client {
 			e.printStackTrace();
 		}
 	}
-	// Out backup request
+	// The command is "put backup tuples"
 	void outBackup(String hostAddress, String portNumber, String tuples) {
 		try {
 			Socket client = new Socket(hostAddress, Integer.valueOf(portNumber));
@@ -191,7 +179,7 @@ public class Client {
 			e.printStackTrace();
 		}
 	}
-	// Exact in request
+	//The command is "delete original tuples"
 	void ino(String hostAddress, String portNumber, String tuples) {
 		try {
 			Socket client = new Socket(hostAddress, Integer.valueOf(portNumber));
@@ -209,7 +197,7 @@ public class Client {
 		}
 	}
 	
-	//
+	//The command is "delete backup tuples"
 	void inBackup(String hostAddress, String portNumber, String tuples) {
 		try {
 			Socket client = new Socket(hostAddress, Integer.valueOf(portNumber));
@@ -228,7 +216,7 @@ public class Client {
 		
 	}
 	
-	// Exact read request
+	//The command is "read original tuples"
 	boolean rdo(String hostAddress, String portNumber, String tuples) {
 		String message = "";
 		try {
@@ -250,7 +238,7 @@ public class Client {
 		}
 		return message.equals("") ? false:true;
 	}
-	
+	//The command is "read backup tuples"
 	boolean rdu(String hostAddress, String portNumber, String tuples) {
 		String message = "";
 		try {
